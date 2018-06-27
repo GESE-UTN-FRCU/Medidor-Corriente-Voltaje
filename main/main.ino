@@ -5,21 +5,35 @@ const int CURRENT_SENSOR_PIN = A0;
 const int VOLTAGE_SENSOR_PIN = A1;
 
 // CONSTANTS
-const float CURRENT_SENSOR_SENS = 0.66; // 0.185 - 0.100 - 0.66 segun el modelo
+const float CURRENT_SENSOR_SENS = 0.066; // 0.185 - 0.100 - 0.066 segun el modelo
 
 // VARIABLES
-float voltage,current;
+float voltage,current,lastCurrent,lastVoltage;
 
 float readCurrent(){
     float v = analogRead(CURRENT_SENSOR_PIN)*(5.0 / 1023.0);
-    return (v-2.5)/ CURRENT_SENSOR_SENS;
+    return (v-2.5035)/ CURRENT_SENSOR_SENS;
 }
 
 float readVoltage(){
-    float v = analogRead(VOLTAGE_SENSOR_PIN)*(5.0 / 1023);
+    float v = analogRead(VOLTAGE_SENSOR_PIN)*(5.0 / 1023)*(5.91);
     return v;
 }
 
+void readSensors(int n_muestras){
+  
+  lastCurrent = 0;
+  lastVoltage = 0;
+
+  for(int i=0;i<n_muestras;i++)
+  {
+    lastCurrent = lastCurrent+readVoltage();
+    lastVoltage = lastVoltage+readVoltage();  
+  }
+
+  lastCurrent = lastCurrent / n_muestras;
+  lastVoltage = lastVoltage / n_muestras;
+}
 
 void setup() {
     Serial.begin(9600);
@@ -31,9 +45,9 @@ void loop() {
   voltage = readVoltage();
 
     Serial.print("V: ");
-    Serial.print(voltage,3);
+    Serial.print(voltage,4);
     Serial.print("  I: ");
-    Serial.println(current,3); 
+    Serial.println(current,4); 
   
   delay(1000);     
 }
