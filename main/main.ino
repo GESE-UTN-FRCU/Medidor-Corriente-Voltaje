@@ -1,4 +1,9 @@
 #include <Arduino.h>
+#include <DS3231_Simple.h>
+#include <Wire.h>
+
+// DEVICEs
+DS3231_Simple Clock;
 
 // PINOUT
 const int CURRENT_SENSOR_PIN = A0;
@@ -36,7 +41,9 @@ void readSensors(int n_muestras){
 }
 
 void setup() {
+    Wire.begin();
     Serial.begin(9600);
+
 }
 
 void loop() {
@@ -44,10 +51,18 @@ void loop() {
   current = readCurrent();
   voltage = readVoltage();
 
+    //PRINT VOLTAGE AND CURRENT
     Serial.print("V: ");
     Serial.print(voltage,4);
     Serial.print("  I: ");
-    Serial.println(current,4); 
+    Serial.println(current,4);
+
+    //PRINT DATE
+    Clock.printDateTo_YMD(Serial);
+    Serial.print(' ');
+    Clock.printTimeTo_HMS(Serial);
+    Serial.println();
+    
   
   delay(1000);     
 }
