@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
-
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <Ticker.h>
@@ -51,6 +50,7 @@ void setupWiFi()
     WiFi.setAutoConnect(true);
     WiFi.setAutoReconnect(true);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
+    WiFi.reconnect();
 }
 
 
@@ -76,13 +76,13 @@ void statusLedTickerFunction()
 
 
 void setup() {
-  Serial.begin(BAUD_RATE);
-  delay(10);
- 
-  pinMode(STATUS_PIN, OUTPUT);
-  digitalWrite(STATUS_PIN, HIGH);
- 
-  setupWiFi();
+
+    Serial.begin(BAUD_RATE);
+    
+    pinMode(STATUS_PIN, OUTPUT);
+    digitalWrite(STATUS_PIN, HIGH);
+    
+    setupWiFi();
 
     tickerStatusLed.start();
 
@@ -99,7 +99,9 @@ void sendData(){
     HTTPClient http;
     http.begin(ENDPOINT);
     http.addHeader("Content-Type", "application/json");
-    int code = http.POST((uint8_t*) buffer,root.measureLength());
+
+    int code = http.POST(buffer);
+
     Serial.println(code);
     http.end();
 }
@@ -138,17 +140,18 @@ void loop() {
     
     tickerStatusLed.update();
 
-    if (WiFi.status() == WL_CONNECTED)
+    t = millis();
+    read();
+    Serial.print("Time: ");
+    Serial.println(millis()-t);
+
+
+    Serial.print("I: ");
+    Serial.println(current,5); 
+
+    Serial.print(WiFi.getSleepMode());
+        if (WiFi.status() == WL_CONNECTED)
     {
-        t = millis();
-        read();
-        Serial.print("Time: ");
-        Serial.println(millis()-t);
-
-
-        Serial.print("I: ");
-        Serial.println(current,5); 
-
         sendData();
     }
 
