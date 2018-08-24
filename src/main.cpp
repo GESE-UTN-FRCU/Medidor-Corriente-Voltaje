@@ -25,6 +25,8 @@ const int STATUS_PIN = 2;
 
 const int ANALOG_PIN = A0;
 
+const int prueba = 0;
+
 
 /***************************** TICKERS **********************************/
 const int STATUS_LED_NO_WIFI_TIME = 150;
