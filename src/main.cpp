@@ -1,30 +1,26 @@
 #include <Arduino.h>
-#include <PubSubClient.h>
+#include <ArduinoJson.h>
+
 #include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
 #include <Ticker.h>
 
 
-const char* WIFI_SSID = "FiberCorp WiFi533 2.4Ghz";
-const char* WIFI_PASS = "0103061510";
+// const char* WIFI_SSID = "FiberCorp WiFi533 2.4Ghz";
+// const char* WIFI_PASS = "0103061510";
+const char* WIFI_SSID = "MiViejaMula";
+const char* WIFI_PASS = "viejamula";
+
+const char* ENDPOINT = "http://10.42.0.1:3000/";
 
 const int BAUD_RATE = 115200;
 const int STATUS_PIN = 2;
 
 const int ANALOG_PIN = A0;
 
-/****************************** MQTT ************************************/
-const char *MQTT_SERVER = "m14.cloudmqtt.com";
-const char *MQTT_USER = "jfdwnjuj";
-const char *MQTT_PASSWORD = "re4mRYvxtPvO";
-const int MQTT_PORT = 11172;
-const char *MQTT_CLIENT_ID = "asds";
-
-const char *LAST_TOPIC = "meters/solarMeter01/last";
-/************************************************************************/
 
 /***************************** TICKERS **********************************/
 const int STATUS_LED_NO_WIFI_TIME = 150;
-const int STATUS_LED_NO_MQTT_TIME = 400;
 /************************************************************************/
 
 
@@ -38,44 +34,17 @@ float current = 0;
 
 long t;
 
-
 unsigned long lastMillisStatusLed = 0;
 bool statusLed = false;
 
+char buffer[1000];
 
-WiFiClient wifiClient;
-PubSubClient mqttClient(wifiClient);
+StaticJsonBuffer<1000> jsonBuffer;
 
 void statusLedTickerFunction();
 Ticker tickerStatusLed(statusLedTickerFunction,1000);
 
 
-
-
-
-
-
-void callback(char *topic, byte *payload, unsigned int length)
-{
-    Serial.print("Message arrived at [");
-    Serial.print(topic);
-    Serial.print("] of length [");
-    Serial.print(length);
-    Serial.println("]");
-/*
-    if (strcmp(topic, REQUEST_TOPIC) == 0)
-    {
-        parseStatusRequest();
-    }
-    else if (strcmp(topic, UPDATE_TOPIC) == 0)
-    {
-        parseUpdate(payload, length);
-    }
-    else if (strcmp(topic, MODE_TOPIC) == 0)
-    {
-        parseMode(payload, length);
-    }*/
-}
 
 void setupWiFi()
 {
@@ -85,39 +54,15 @@ void setupWiFi()
 }
 
 
-
-void reconnect()
-{
-
-    Serial.println();
-    Serial.println("Attempting MQTT connection");
-
-    if (mqttClient.connect(MQTT_CLIENT_ID, MQTT_USER, MQTT_PASSWORD))
-    {
-        Serial.println("MQTT Connected");
-    }
-    else
-    {
-        Serial.print("failed, rc=");
-        Serial.println(mqttClient.state());
-    }
-}
-
 void statusLedTickerFunction()
 {
 
     if (WiFi.status() == WL_CONNECTED)
     {
-        if (mqttClient.connected())
-        {
-            statusLed = true;
-            tickerStatusLed.interval(1);
-        }
-        else
-        {
-            statusLed = !statusLed;
-            tickerStatusLed.interval(STATUS_LED_NO_MQTT_TIME);
-        }
+      
+        statusLed = true;
+        tickerStatusLed.interval(1);
+ 
     }
     else
     {
@@ -128,11 +73,6 @@ void statusLedTickerFunction()
     digitalWrite(STATUS_PIN, !statusLed);
 }
 
-void setupMQTT()
-{
-    mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
-    mqttClient.setCallback(callback);
-}
 
 
 void setup() {
@@ -144,13 +84,28 @@ void setup() {
  
   setupWiFi();
 
-  setupMQTT();
-
     tickerStatusLed.start();
 
 }
 
-void medir(){
+void sendData(){
+    jsonBuffer.clear();
+    JsonObject &root = jsonBuffer.createObject();
+
+    root.set<float>("i", current);
+
+    root.printTo(buffer);
+
+    HTTPClient http;
+    http.begin(ENDPOINT);
+    http.addHeader("Content-Type", "application/json");
+    int code = http.POST((uint8_t*) buffer,root.measureLength());
+    Serial.println(code);
+    http.end();
+}
+
+
+void read(){
 
   //voltage=0;
   current=0;
@@ -183,34 +138,19 @@ void loop() {
     
     tickerStatusLed.update();
 
-    delay(0);
-
     if (WiFi.status() == WL_CONNECTED)
     {
-        if (!mqttClient.connected())
-        {
-            Serial.println("MQTT Disconected");
-            reconnect();
-        }
+        t = millis();
+        read();
+        Serial.print("Time: ");
+        Serial.println(millis()-t);
+
+
+        Serial.print("I: ");
+        Serial.println(current,5); 
+
+        sendData();
     }
-
-
-    delay(0);
-    mqttClient.loop();
-    delay(0);
-
-
-/*
-    t = millis();
-    medir();
-    Serial.print("Time: ");
-    Serial.println(millis()-t);
-
-
-    Serial.print("I: ");
-    Serial.println(current,5); 
-        */
-
 
 }
  
