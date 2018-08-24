@@ -1,8 +1,16 @@
+
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <Ticker.h>
+
+#include <Wire.h>
+#include <DS3231.h>
+
+DS3231 clock;
+RTCDateTime dt;
+
 
 
 // const char* WIFI_SSID = "FiberCorp WiFi533 2.4Ghz";
@@ -50,7 +58,6 @@ void setupWiFi()
     WiFi.setAutoConnect(true);
     WiFi.setAutoReconnect(true);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
-    WiFi.reconnect();
 }
 
 
@@ -86,6 +93,11 @@ void setup() {
 
     tickerStatusLed.start();
 
+
+    clock.begin();
+
+  // Set sketch compiling time
+    clock.setDateTime(__DATE__, __TIME__);
 }
 
 void sendData(){
@@ -140,20 +152,10 @@ void loop() {
     
     tickerStatusLed.update();
 
-    t = millis();
-    read();
-    Serial.print("Time: ");
-    Serial.println(millis()-t);
+    dt = clock.getDateTime();
+    Serial.println(dt.unixtime);
 
-
-    Serial.print("I: ");
-    Serial.println(current,5); 
-
-    Serial.print(WiFi.getSleepMode());
-        if (WiFi.status() == WL_CONNECTED)
-    {
-        sendData();
-    }
+    delay(1000);
 
 }
  
