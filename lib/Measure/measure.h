@@ -24,8 +24,11 @@ class Measure //Definicion de la clase
 
     private:
         const float CURRENT_SENSOR_SENSITIVITY = 0.066;
-        const float CURRENT_OFFSET_VOLTAGE = 1.545;
-        const float ANALOG_VOLTAGE = 3.073;
+        const float CURRENT_OFFSET_VOLTAGE = 2.5;
+        const float VOLTAGE_MULTIPLY = 8.5739;
+
+
+        const float ANALOG_VOLTAGE = 3.1189;
         const float ANALOG_MAX = 1023.0;
 
 

@@ -86,20 +86,6 @@ void setup() {
 int i=0;
 
 
-void parseByte(char *x){
-    Serial.print(x[0], HEX);
-    Serial.print('|');
-    Serial.print(x[1], HEX);
-    Serial.print('|');
-    Serial.print(x[2], HEX);
-    Serial.print('|');
-    Serial.println(x[3], HEX);
-
-}
-
-struct test{
-    int test;
-};
 
 void loop() {
     
@@ -107,7 +93,7 @@ void loop() {
 
     measure.loop();
 
-    if(i >= 5){
+    if(i >= 1000){
         i=0;
         measure.getMeasure();
 
@@ -118,14 +104,7 @@ void loop() {
     }
     
 
-    delay(100);
 
-    test asd;
-    asd.test = 0x0D56A326;
-
-    parseByte((char*) &asd);
-
-    delay(2000);
 
 }
 
