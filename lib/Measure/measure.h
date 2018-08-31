@@ -3,7 +3,7 @@
 
 #include <Arduino.h> //Permite utilizar los comandos de Arduino
  
-typedef struct t_measure {
+struct t_measure {
     float current;
     float voltage;
 };
@@ -24,8 +24,8 @@ class Measure //Definicion de la clase
 
     private:
         const float CURRENT_SENSOR_SENSITIVITY = 0.066;
-        const float CURRENT_OFFSET_VOLTAGE = 1.67416215;
-        const float ANALOG_VOLTAGE = 3.3;
+        const float CURRENT_OFFSET_VOLTAGE = 1.545;
+        const float ANALOG_VOLTAGE = 3.073;
         const float ANALOG_MAX = 1023.0;
 
 

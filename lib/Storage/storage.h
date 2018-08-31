@@ -3,12 +3,14 @@
 
 #include <Arduino.h> //Permite utilizar los comandos de Arduino
 #include <measure.h> //Permite utilizar la estructura measure
+#include <Wire.h>
  
-class storage //Definicion de la clase
+class Storage //Definicion de la clase
 {
     private:
         const float INIT_INDEX = 10;
         const int BUFFER_SIZE = 50;
+        const int DEVICE = 0x57;
 
         bool _debug;
 
@@ -16,20 +18,19 @@ class storage //Definicion de la clase
  
     public:
 
-        storage(bool debug);
+        Storage(bool debug);
 
         void setup();
 
         void store(t_measure measure);
 
-        void retrive(int skip,int limit);
+        void retriveLast();
 
-        void remove(int index);
+        void removeLast();
 
         void resetStorage();
 
-        t_measure measures[BUFFER_SIZE];
-        
+        t_measure lastReadedMeasure;
  };
  
 #endif

@@ -12,21 +12,26 @@ void Measure::setup(){
     pinMode(CURRENT_SWITCH_PIN, OUTPUT);
     pinMode(VOLTAGE_SWITCH_PIN, OUTPUT);
 
-    digitalWrite(CURRENT_SWITCH_PIN,HIGH);
+    digitalWrite(CURRENT_SWITCH_PIN,LOW);
     digitalWrite(VOLTAGE_SWITCH_PIN,LOW);
 }
 
 void Measure::loop(){
     
-   // digitalWrite(CURRENT_SWITCH_PIN,HIGH);
-  //  delay(1);
-    float l = analogRead(ANALOG_PIN) * (ANALOG_VOLTAGE / ANALOG_MAX);
+    
+    digitalWrite(VOLTAGE_SWITCH_PIN,LOW);
+    digitalWrite(CURRENT_SWITCH_PIN,HIGH);
+    delay(1);
+    measureAux.current += analogRead(ANALOG_PIN) * (ANALOG_VOLTAGE / ANALOG_MAX);
 
-    measureAux.current += l;
-
-    Serial.println(l);
-   // digitalWrite(CURRENT_SWITCH_PIN,LOW);
-
+    // Serial.println(analogRead(ANALOG_PIN));
+    // Serial.println(analogRead(ANALOG_PIN) * (ANALOG_VOLTAGE / ANALOG_MAX));
+    
+    digitalWrite(CURRENT_SWITCH_PIN,LOW);
+    digitalWrite(VOLTAGE_SWITCH_PIN,HIGH);
+    delay(1);
+    measureAux.voltage += analogRead(ANALOG_PIN) * (ANALOG_VOLTAGE / ANALOG_MAX);
+ 
     count += 1;
         
 }
@@ -34,12 +39,17 @@ void Measure::loop(){
 void Measure::getMeasure(){
 
         measure.current = measureAux.current / count;
+        measure.voltage = measureAux.voltage / count;
 
-        measure.current = -(measure.current - CURRENT_OFFSET_VOLTAGE)/ CURRENT_SENSOR_SENSITIVITY;
+        measure.current = (CURRENT_OFFSET_VOLTAGE- measure.current) * 1000 / CURRENT_SENSOR_SENSITIVITY;
+        measure.voltage = measure.voltage; // CALIBRAR AQUI EL DIVISOR DE VOLTAGE
     
         if(this->_debug){
-            Serial.print("Measure: ");
-            Serial.println(measure.current,8);
+            Serial.print("I (ma): ");
+            Serial.println(measure.current,2);
+
+            Serial.print("V (v): ");
+            Serial.println(measure.voltage,2);
         }
             
         
@@ -48,4 +58,6 @@ void Measure::getMeasure(){
 void Measure::resetMeasure(){
         count=0;
         measureAux.current=0;
+        measureAux.voltage=0;
+
 }
