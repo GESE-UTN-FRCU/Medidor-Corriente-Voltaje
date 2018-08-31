@@ -26,30 +26,43 @@ Storage::Storage(bool debug){
 
 void Storage::setup(){
     //REPLACE WITH READ FROM EPPROM
-    this->index = this->INIT_INDEX;
+    index = INIT_INDEX;
 
 }
 
 void Storage::store(t_measure measure){
-    byte data = 20;
+    byte *measurebytes = new byte[struct_size];
+    char charbuffer[struct_size];
 
-    
+    memcpy(charbuffer,&measure,struct_size);
 
-    i2c_eeprom_write_page(this->DEVICE,this->index,&data,4);
-        
+    measurebytes = (byte*) charbuffer;
+
+    i2c_eeprom_write_page(DEVICE,index,measurebytes,(byte) struct_size);
+
+    index = index + struct_size;
 }
 
 void Storage::retriveLast(){
-    byte *buffer;
-   // i2c_eeprom_read_buffer(this->DEVICE,this->index-8,buffer,4);
-        
+    byte *measurebytes = new byte[struct_size];
+    char charbuffer[struct_size];
+    
+    i2c_eeprom_read_buffer(DEVICE,index,measurebytes,struct_size);
+
+    for(int i=0; i<=(struct_size-1);i++){
+        charbuffer[i] = (char) measurebytes[i];
+    }
+    
+    memcpy(&lastReadedMeasure,charbuffer,struct_size);   
 }
 
 void Storage::removeLast(){
+
+    index = index - struct_size;
         
 }
 
 void Storage::resetStorage(){
     //SAVE INIT INDEX FROM EPPROM
-    this->index = this->INIT_INDEX;
+    index = INIT_INDEX;
 }

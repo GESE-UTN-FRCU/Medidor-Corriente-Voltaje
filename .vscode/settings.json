@@ -8,7 +8,7 @@
         "initializer_list": "cpp"
     },
     "terminal.integrated.env.linux": {
-        "PATH": "/home/agu/.platformio/penv/bin:/home/agu/.platformio/penv:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
+        "PATH": "/home/manuel/.platformio/penv/bin:/home/manuel/.platformio/penv:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/opt/PostgreSQL-10.3/bin:/home/manuel/bin:/usr/lib/jvm/jdk1.7.0/bin:/opt/PostgreSQL-10.3/bin:/home/manuel/bin:/usr/lib/jvm/jdk1.7.0/bin",
         "PLATFORMIO_CALLER": "vscode"
     }
 }

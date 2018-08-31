@@ -11,6 +11,7 @@ class Storage //Definicion de la clase
         const float INIT_INDEX = 10;
         const int BUFFER_SIZE = 50;
         const int DEVICE = 0x57;
+        const int struct_size = sizeof(t_measure);
 
         bool _debug;
 
