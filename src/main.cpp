@@ -8,12 +8,14 @@
 #include "transfer.h"
 
 
+const bool DEBUG = true;
 
 const int BAUD_RATE = 115200;
 const int STATUS_PIN = 2;
 
 /***************************** TICKERS **********************************/
-const int STATUS_LED_NO_WIFI_TIME = 150;
+const int STATUS_LED_NO_WIFI_TIME = 500;
+const int STATUS_LED_DEFAULT_TIME = 2000;
 /************************************************************************/
 
 
@@ -29,6 +31,8 @@ void statusLedTickerFunction();
 Ticker tickerStatusLed(statusLedTickerFunction,1000);
 DS3231 clock;
 RTCDateTime dt;
+
+StaticJsonBuffer<100> jsonBuffer;
 
 
 Measure measure(true);
@@ -46,7 +50,7 @@ void statusLedTickerFunction()
     if (transfer.wifiConnected())
     {
          statusLed = true;
-         tickerStatusLed.interval(1);
+         tickerStatusLed.interval(STATUS_LED_DEFAULT_TIME);
     }
     else
     {
@@ -77,29 +81,49 @@ void setup() {
 }
 
 long getEpoch(){
-    if(debug)
+    if(DEBUG)
         Serial.println("Main: Getting Time");
     dt = clock.getDateTime();
-    if(debug){
-        Serial.println("Main: Time = ");
-        Serial.println(dt.unixtime);
+    if(DEBUG){
+        Serial.print("Main: Time = ");
+        Serial.print(dt.hour);
+        Serial.print(':');
+        Serial.print(dt.minute);
+        Serial.print(':');
+        Serial.println(dt.second);
     }
-    return dt.unixtime:
+    return dt.unixtime;
+}
+
+
+JsonObject& measureToJson(t_measure m){
+    jsonBuffer.clear();
+    JsonObject &root = jsonBuffer.createObject();
+
+    root.set<long>("t", getEpoch());
+    root.set<float>("v", m.voltage);
+    root.set<float>("i", m.current);
+
+    return root;
 }
 
 
 int i=0;
 void loop() {
-    
     tickerStatusLed.update();
 
+    delay(200);
     measure.loop();
+ 
 
-    if(i >= 1000){
+    if(i >= 20){
         i=0;
-        measure.getMeasure();
-
+        t_measure m = measure.getMeasure();
         measure.resetMeasure();
+
+        transfer.sendData(measureToJson(m));
+
+
     }
     else{
         i++;

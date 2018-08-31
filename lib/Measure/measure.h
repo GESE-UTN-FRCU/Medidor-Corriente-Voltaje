@@ -18,7 +18,7 @@ class Measure //Definicion de la clase
         void setup();
         void loop();
 
-        void getMeasure();
+        t_measure getMeasure();
 
         void resetMeasure();
 

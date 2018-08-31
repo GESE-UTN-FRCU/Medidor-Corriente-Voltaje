@@ -25,9 +25,11 @@ class Transfer //Definicion de la clase
 
 
     private:
-        const char* WIFI_SSID = "FiberCorp WiFi533 2.4Ghz";
-        const char* WIFI_PASS = "0103061510";
-        const char* ENDPOINT = "192.168.0.13:3000/";
+        // const char* WIFI_SSID = "FiberCorp WiFi533 2.4GHz";
+        // const char* WIFI_PASS = "0103061510";
+        const char* WIFI_SSID = "MiViejaMula";
+        const char* WIFI_PASS = "viejamula";
+        const char* ENDPOINT = "http://10.42.0.1:3000/";
 
         bool _debug;
 

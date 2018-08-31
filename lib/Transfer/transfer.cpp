@@ -10,6 +10,7 @@ Transfer::Transfer(bool debug){
 
 
 void Transfer::setup(){
+    WiFi.setSleepMode(WIFI_NONE_SLEEP);
     WiFi.setAutoConnect(true);
     WiFi.setAutoReconnect(true);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -38,5 +39,9 @@ bool Transfer::sendData(JsonObject &root){
 }
 
 bool Transfer::wifiConnected(){
+    if(_debug){
+        Serial.print("Transfer: Wifi-Status: ");
+        Serial.println(WiFi.status());
+    }
     return WiFi.status() == WL_CONNECTED;
 }
