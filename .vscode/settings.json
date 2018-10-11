@@ -5,10 +5,12 @@
         "list": "cpp",
         "unordered_map": "cpp",
         "vector": "cpp",
-        "initializer_list": "cpp"
+        "initializer_list": "cpp",
+        "*.tcc": "cpp",
+        "fstream": "cpp"
     },
     "terminal.integrated.env.linux": {
-        "PATH": "/home/agu/.platformio/penv/bin:/home/agu/.platformio/penv:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
+        "PATH": "/home/agu/.platformio/penv/bin:/home/agu/.platformio/penv:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/local/go/bin:/usr/local/go/bin",
         "PLATFORMIO_CALLER": "vscode"
     }
 }

@@ -2,46 +2,27 @@
 
 
 
-
-
-Transfer::Transfer(bool debug){
+Transfer::Transfer(ESP8266WebServer* server, bool debug){
     this->_debug = debug;
+    this->server = server;
 }
 
+void Transfer::handleRoot(){
+   server->send(200, "text/html", "<h1>You are connected</h1>");
+}
 
 void Transfer::setup(){
-    WiFi.setSleepMode(WIFI_NONE_SLEEP);
-    WiFi.setAutoConnect(true);
-    WiFi.setAutoReconnect(true);
-    WiFi.begin(WIFI_SSID, WIFI_PASS);
+    
+}
+
+void Transfer::enable(){
+    WiFi.mode(WIFI_AP);
+}
+
+void Transfer::disable(){
+    WiFi.mode(WIFI_OFF);
 }
 
 void Transfer::loop(){
-
-}
-
-bool Transfer::sendData(JsonObject &root){
-    if(_debug)
-        Serial.println("Transfer: Sending data");
-    root.printTo(buffer);
-
-    HTTPClient http;
-    http.begin(ENDPOINT);
-    http.addHeader("Content-Type", "application/json");
-    int code = http.POST(buffer);
-    http.end();
-
-    if(_debug){
-        Serial.print("Transfer: Status Code = ");
-        Serial.println(code);
-    }
-    return code == 200;
-}
-
-bool Transfer::wifiConnected(){
-    if(_debug){
-        Serial.print("Transfer: Wifi-Status: ");
-        Serial.println(WiFi.status());
-    }
-    return WiFi.status() == WL_CONNECTED;
+    server->handleClient();
 }
