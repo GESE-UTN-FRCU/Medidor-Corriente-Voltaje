@@ -26,7 +26,6 @@ const int STATUS_LED_DEFAULT_TIME = 2000;
 /******************************** WIFI ***********************************/
 const char* WIFI_SSID = "Solar Energy Meter";
 const char* WIFI_PASS = "11223344";
-const char* DATA_DOWNLOAD_URI = "/datos.csv";
 /************************************************************************/
 
 /******************************** STORAGE ***********************************/
@@ -34,8 +33,6 @@ const char* DATA_FILE = "/data.csv";
 /************************************************************************/
 
 long t;
-
-String page = "<h1>Solar Energy Metter</h1><p><a href=\"datos.csv\"><button>Download CSV</button></a>&nbsp;<a href=\"reset\"><button>Reset device</button></a></p>";
 
 t_measure currentMeasure;
 
@@ -75,12 +72,16 @@ void resetData(){
 }
 
 void handleRoot(){
-   server.send(200, "text/html", page);
+   File f = SPIFFS.open("/index.html","r");
+   server.streamFile(f,"text/html");
+   f.close();
 }
 
 void handleReset(){
   resetData();
-  server.send(200,"text/html",page);
+   File f = SPIFFS.open("/index.html","r");
+   server.streamFile(f,"text/html");
+   f.close();
 }
 
 void handleData(){
