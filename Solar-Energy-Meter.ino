@@ -1,6 +1,7 @@
 #include <Arduino.h>
-//#include <Ticker.h>
+#include <Wire.h>
 #include <DS3231.h>
+//#include <Ticker.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 //#include <DNSServer.h>
@@ -41,12 +42,11 @@ bool statusLed = false;
 
 ESP8266WebServer server(80);
 
+DS3231 clock;
+RTCDateTime dt;
+
 //void statusLedTickerFunction();
 //Ticker tickerStatusLed(statusLedTickerFunction,1000);
-
-
-// DS3231 clock;
-// RTCDateTime dt;
 
 /*void statusLedTickerFunction()
 {
@@ -105,21 +105,21 @@ void setupWifi(){
 }
 
 void setupClock(){
-    // clock.begin();
-    // clock.setDateTime(__DATE__, __TIME__);
+    clock.begin();
+    clock.setDateTime(__DATE__, __TIME__);
 }
 
 
 void setup() {
     Serial.begin(BAUD_RATE);
     delay(10);
+    Wire.begin();
+
+    Serial.print("Prueba");
 
     pinMode(STATUS_PIN, OUTPUT);
     digitalWrite(STATUS_PIN, LOW);
-
-    //setupClock();
-
-
+    setupClock();
     SPIFFS.begin();
     resetData();
 
@@ -129,20 +129,20 @@ void setup() {
 
 }
 
-// long getEpoch(){
-//     if(DEBUG)
-//         Serial.println("Main: Getting Time");
-//     dt = clock.getDateTime();
-//     if(DEBUG){
-//         Serial.print("Main: Time = ");
-//         Serial.print(dt.hour);
-//         Serial.print(':');
-//         Serial.print(dt.minute);
-//         Serial.print(':');
-//         Serial.println(dt.second);
-//     }
-//     return dt.unixtime;
-// }
+long getEpoch(){
+     if(DEBUG)
+         Serial.println("Main: Getting Time");
+     dt = clock.getDateTime();
+     if(DEBUG){
+         Serial.print("Main: Time = ");
+         Serial.print(dt.hour);
+         Serial.print(':');
+         Serial.print(dt.minute);
+         Serial.print(':');
+         Serial.println(dt.second);
+     }
+     return dt.unixtime;
+}
 
 
 
@@ -151,7 +151,7 @@ void storeMeasure(){
     if (!f){
       Serial.print("file open failed");
       }
-    f.print(currentMeasure.time);
+    f.print(getEpoch());
     f.print(",");
     f.print(currentMeasure.voltage);
     f.print(",");
@@ -180,14 +180,11 @@ void loop() {
   if(currentMillis - previousMillis > loopInterval) { 
     previousMillis = currentMillis;
     
-    currentMeasure.time = random(300);
     currentMeasure.current = random(300);
     currentMeasure.voltage = random(300);
     currentMeasure.light = random(300);
 
     storeMeasure();
-
-       
   }
 }
 
