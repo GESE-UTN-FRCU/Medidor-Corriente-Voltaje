@@ -30,7 +30,9 @@ const char* WIFI_PASS = "11223344";
 /************************************************************************/
 
 /******************************** STORAGE ***********************************/
+const char* INDEX_FILE = "/index.html";
 const char* DATA_FILE = "/data.csv";
+const char* LAST_MEASURE = "/lastmeasure.csv";
 /************************************************************************/
 
 long t;
@@ -65,21 +67,24 @@ RTCDateTime dt;
     digitalWrite(STATUS_PIN, !statusLed);
 }*/
 
+void handleStatus(){
+  FSInfo fs_info;
+  SPIFFS.info(fs_info);
+
+  float porcentage = ((((float)fs_info.totalBytes - (float)fs_info.usedBytes) / (float)fs_info.totalBytes))*100;
+  
+  server.send(200,"text/plain",String(porcentage)+","+String(currentMeasure.time)+","+String(currentMeasure.voltage)+","+String(currentMeasure.current)+","+String(currentMeasure.light));
+}
+
 void resetData(){
     File f = SPIFFS.open(DATA_FILE, "w");
     f.println("Hora,Voltaje,Corriente,Luz");
     f.close();
 }
 
-void handleRoot(){
-   File f = SPIFFS.open("/index.html","r");
-   server.streamFile(f,"text/html");
-   f.close();
-}
-
 void handleReset(){
   resetData();
-   File f = SPIFFS.open("/index.html","r");
+   File f = SPIFFS.open(INDEX_FILE,"r");
    server.streamFile(f,"text/html");
    f.close();
 }
@@ -90,6 +95,12 @@ void handleData(){
   f.close();
 }
 
+void handleRoot(){
+   File f = SPIFFS.open(INDEX_FILE,"r");
+   server.streamFile(f,"text/html");
+   f.close();
+}
+
 void setupWifi(){
     WiFi.softAP(WIFI_SSID, WIFI_PASS);
     IPAddress myIP = WiFi.softAPIP();
@@ -97,10 +108,10 @@ void setupWifi(){
     Serial.print("AP IP address: ");
     Serial.println(myIP);
     
-
     server.on("/", handleRoot);
     server.on("/reset", handleReset);
     server.on("/data", handleData);
+    server.on("/status",handleStatus);
     server.begin();
 }
 
@@ -115,10 +126,10 @@ void setup() {
     delay(10);
     Wire.begin();
 
-    Serial.print("Prueba");
-
+    //PIN NODEMCU
     pinMode(STATUS_PIN, OUTPUT);
     digitalWrite(STATUS_PIN, LOW);
+    
     setupClock();
     SPIFFS.begin();
     resetData();
@@ -151,7 +162,7 @@ void storeMeasure(){
     if (!f){
       Serial.print("file open failed");
       }
-    f.print(getEpoch());
+    f.print(currentMeasure.time);
     f.print(",");
     f.print(currentMeasure.voltage);
     f.print(",");
@@ -179,7 +190,8 @@ void loop() {
   unsigned long currentMillis = millis();
   if(currentMillis - previousMillis > loopInterval) { 
     previousMillis = currentMillis;
-    
+
+    currentMeasure.time = getEpoch();
     currentMeasure.current = random(300);
     currentMeasure.voltage = random(300);
     currentMeasure.light = random(300);
