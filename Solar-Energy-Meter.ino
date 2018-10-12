@@ -1,8 +1,9 @@
 #include <Arduino.h>
-#include <Ticker.h>
+//#include <Ticker.h>
 #include <DS3231.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+//#include <DNSServer.h>
 #include "FS.h"
 
 struct t_measure {
@@ -34,6 +35,8 @@ const char* DATA_FILE = "/data.csv";
 
 long t;
 
+String page = "<h1>Solar Energy Metter</h1><p><a href=\"datos.csv\"><button>Download CSV</button></a>&nbsp;<a href=\"reset\"><button>Reset device</button></a></p>";
+
 t_measure currentMeasure;
 
 unsigned long lastMillisStatusLed = 0;
@@ -41,16 +44,14 @@ bool statusLed = false;
 
 ESP8266WebServer server(80);
 
-void statusLedTickerFunction();
-Ticker tickerStatusLed(statusLedTickerFunction,1000);
+//void statusLedTickerFunction();
+//Ticker tickerStatusLed(statusLedTickerFunction,1000);
+
 
 // DS3231 clock;
 // RTCDateTime dt;
 
-
-
-
-void statusLedTickerFunction()
+/*void statusLedTickerFunction()
 {
 
     if (true)
@@ -65,7 +66,7 @@ void statusLedTickerFunction()
     }
 
     digitalWrite(STATUS_PIN, !statusLed);
-}
+}*/
 
 void resetData(){
     File f = SPIFFS.open(DATA_FILE, "w");
@@ -74,7 +75,18 @@ void resetData(){
 }
 
 void handleRoot(){
-   server.send(200, "text/html", "<h1>Running</h1>");
+   server.send(200, "text/html", page);
+}
+
+void handleReset(){
+  resetData();
+  server.send(200,"text/html",page);
+}
+
+void handleData(){
+  File f = SPIFFS.open(DATA_FILE, "r");
+  server.streamFile(f,"text/csv");
+  f.close();
 }
 
 void setupWifi(){
@@ -86,7 +98,8 @@ void setupWifi(){
     
 
     server.on("/", handleRoot);
-    server.serveStatic(DATA_DOWNLOAD_URI, SPIFFS, DATA_FILE);
+    server.on("/reset", handleReset);
+    server.on("/data", handleData);
     server.begin();
 }
 
@@ -111,7 +124,7 @@ void setup() {
 
     setupWifi();
 
-    tickerStatusLed.start();
+    //tickerStatusLed.start();
 
 }
 
@@ -134,6 +147,9 @@ void setup() {
 
 void storeMeasure(){
     File f = SPIFFS.open(DATA_FILE, "a");
+    if (!f){
+      Serial.print("file open failed");
+      }
     f.print(currentMeasure.time);
     f.print(",");
     f.print(currentMeasure.voltage);
@@ -149,34 +165,28 @@ void storeMeasure(){
 }
 
 
-
+long previousMillis = 0;
+long loopInterval = 1000;
 int i=0;
+
 void loop() {
-    tickerStatusLed.update();
-    delay(0);
-    server.handleClient();
-    delay(0);
+  //tickerStatusLed.update();
+  delay(0);
+  server.handleClient();
+  delay(0);
     
-
- 
-    if(i >= 50){
-        i=0;
-        currentMeasure.time = random(300);
-        currentMeasure.current = random(300);
-        currentMeasure.voltage = random(300);
-        currentMeasure.light = random(300);
-
-        storeMeasure();
-    }
-    else{
-        i++;
-    }
-
-    delay(100);
-   
+  unsigned long currentMillis = millis();
+  if(currentMillis - previousMillis > loopInterval) { 
+    previousMillis = currentMillis;
     
+    currentMeasure.time = random(300);
+    currentMeasure.current = random(300);
+    currentMeasure.voltage = random(300);
+    currentMeasure.light = random(300);
 
+    storeMeasure();
 
+       
+  }
 }
-
 
