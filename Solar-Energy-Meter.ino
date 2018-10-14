@@ -44,8 +44,8 @@ bool statusLed = false;
 
 ESP8266WebServer server(80);
 
-DS3231 clock;
-RTCDateTime dt;
+//DS3231 clock;
+//RTCDateTime dt;
 
 //void statusLedTickerFunction();
 //Ticker tickerStatusLed(statusLedTickerFunction,1000);
@@ -115,10 +115,10 @@ void setupWifi(){
     server.begin();
 }
 
-void setupClock(){
+/*void setupClock(){
     clock.begin();
     clock.setDateTime(__DATE__, __TIME__);
-}
+}*/
 
 
 void setup() {
@@ -130,7 +130,7 @@ void setup() {
     pinMode(STATUS_PIN, OUTPUT);
     digitalWrite(STATUS_PIN, LOW);
     
-    setupClock();
+    //setupClock();
     SPIFFS.begin();
     resetData();
 
@@ -139,7 +139,7 @@ void setup() {
     //tickerStatusLed.start();
 
 }
-
+/*
 long getEpoch(){
      if(DEBUG)
          Serial.println("Main: Getting Time");
@@ -153,7 +153,7 @@ long getEpoch(){
          Serial.println(dt.second);
      }
      return dt.unixtime;
-}
+}*/
 
 
 
@@ -191,7 +191,7 @@ void loop() {
   if(currentMillis - previousMillis > loopInterval) { 
     previousMillis = currentMillis;
 
-    currentMeasure.time = getEpoch();
+    currentMeasure.time = 1539489908;
     currentMeasure.current = random(300);
     currentMeasure.voltage = random(300);
     currentMeasure.light = random(300);

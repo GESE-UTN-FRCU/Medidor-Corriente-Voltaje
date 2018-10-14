@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+ 	<link rel="stylesheet" type="text/css" href="\style.css">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
 
@@ -8,19 +9,73 @@
 
   </head>
   <body>
-	<div>
-		<div class="row">
+	<center>
+		<div>
+			<h1>
+				Solar Energy Metter
+			</h1>
 			<div>
-				<h3>
-					CSV Lectures
-				</h3>
-				<div>
-					<a href="data"><button >Download</button></a>
-					<a href="reset"><button>Delete data</button></a>
-				</div>
+				<a href="data"><button>Download all data</button></a>
+				<a href="reset"><button>Delete all data</button></a>
 			</div>
+			<hr>
+			<div>
+				<div>
+					<h3>Status</h3>
+					<div>
+						<p id="percentage">Free Space - </p>
+						<p><progress id="freeSpaceBar" value="0" max="100"></progress></p>
+					</div>
+				</div>
+				<div>
+					<h3>Last lecture</h3>
+					<div>
+						<table>
+							<thead>
+							    <tr>
+							      <th scope="col">Date</th>
+							      <th scope="col">Voltage</th>
+							      <th scope="col">Current</th>
+							      <th scope="col">Light</th>
+							    </tr>
+							  </thead>
+							<tbody>
+							  <tr>
+							    <td scope="row" data-label="Date"><span id="dateLL"></span></td>
+							    <td data-label="Voltage"><span id="voltLL"></span></td>
+							    <td data-label="Current"><span id="currLL"></span></td>
+							    <td data-label="Light"><span id="lighLL"></span></td>
+							  </tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
 		</div>
-	</div>    
+	</center>
   </body>
+
+  <script type="text/javascript" src="\functions.js"></script>
+
+  <script type="text/javascript">
+  	var xhr = new XMLHttpRequest();
+	xhr.open('GET', "http://192.168.4.1/status", true);
+	xhr.send();
+
+	xhr.onreadystatechange = processRequest;
+
+	function processRequest(e) {
+	    if (xhr.readyState == 4 && xhr.status == 200) {
+	        var response = CSVtoArray(xhr.responseText);
+
+	        document.getElementById("freeSpaceBar").setAttribute("value", response[0]);
+	        document.getElementById("percentage").textContent += response[0]+"%";
+
+	        document.getElementById("dateLL").textContent += timeConverter(response[1]);
+	        document.getElementById("voltLL").textContent += response[2]+" V";
+	        document.getElementById("currLL").textContent += response[3]+" A";
+	        document.getElementById("lighLL").textContent += response[4]+" lm";
+	    }
+	}
+  </script>
 </html>
 
