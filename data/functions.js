@@ -21,6 +21,6 @@ function CSVtoArray(text) {
 
 // Return an string with the date
 function timeConverter(UNIX_timestamp){
-  var a = new Date((UNIX_timestamp +10800) * 1000);
+  var a = new Date((parseInt(UNIX_timestamp))* 1000);
   return a.getDate() + '/' + a.getMonth() + '/' + a.getFullYear() + ' - ' + a.getHours() + ':' + a.getMinutes() + ':' + a.getSeconds();
 }

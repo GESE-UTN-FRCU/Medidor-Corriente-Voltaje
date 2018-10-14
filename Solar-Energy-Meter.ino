@@ -32,7 +32,8 @@ const char* WIFI_PASS = "11223344";
 /******************************** STORAGE ***********************************/
 const char* INDEX_FILE = "/index.html";
 const char* DATA_FILE = "/data.csv";
-const char* LAST_MEASURE = "/lastmeasure.csv";
+const char* FUNCTIONS_FILE = "/functions.js";
+const char* STYLE_FILE = "/style.css";
 /************************************************************************/
 
 long t;
@@ -67,6 +68,25 @@ ESP8266WebServer server(80);
     digitalWrite(STATUS_PIN, !statusLed);
 }*/
 
+
+void resetData(){
+    File f = SPIFFS.open(DATA_FILE, "w");
+    f.println("Hora,Voltaje,Corriente,Luz");
+    f.close();
+}
+
+void handleFunctions(){
+   File f = SPIFFS.open(FUNCTIONS_FILE,"r");
+   server.streamFile(f,"text/javascript");
+   f.close();
+}
+
+void handleStyle(){
+   File f = SPIFFS.open(STYLE_FILE,"r");
+   server.streamFile(f,"text/css");
+   f.close();
+}
+
 void handleStatus(){
   FSInfo fs_info;
   SPIFFS.info(fs_info);
@@ -74,12 +94,6 @@ void handleStatus(){
   float porcentage = ((((float)fs_info.totalBytes - (float)fs_info.usedBytes) / (float)fs_info.totalBytes))*100;
   
   server.send(200,"text/plain",String(porcentage)+","+String(currentMeasure.time)+","+String(currentMeasure.voltage)+","+String(currentMeasure.current)+","+String(currentMeasure.light));
-}
-
-void resetData(){
-    File f = SPIFFS.open(DATA_FILE, "w");
-    f.println("Hora,Voltaje,Corriente,Luz");
-    f.close();
 }
 
 void handleReset(){
@@ -112,6 +126,8 @@ void setupWifi(){
     server.on("/reset", handleReset);
     server.on("/data", handleData);
     server.on("/status",handleStatus);
+    server.on("/functions.js",handleFunctions);
+    server.on("/style.css",handleStyle);
     server.begin();
 }
 
