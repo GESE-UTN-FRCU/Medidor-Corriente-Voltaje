@@ -19,6 +19,11 @@ const bool DEBUG = true;
 const int BAUD_RATE = 115200;
 const int STATUS_PIN = 2;
 
+const int ANALOG_PIN = A0;
+const int MULTIPLEXOR_1 = 12;
+const int MULTIPLEXOR_2 = 14;     
+int inputVal  = 0;        
+
 /***************************** TICKERS **********************************/
 const int STATUS_LED_NO_WIFI_TIME = 500;
 const int STATUS_LED_DEFAULT_TIME = 2000;
@@ -45,8 +50,8 @@ bool statusLed = false;
 
 ESP8266WebServer server(80);
 
-//DS3231 clock;
-//RTCDateTime dt;
+DS3231 clock;
+RTCDateTime dt;
 
 //void statusLedTickerFunction();
 //Ticker tickerStatusLed(statusLedTickerFunction,1000);
@@ -131,22 +136,30 @@ void setupWifi(){
     server.begin();
 }
 
-/*void setupClock(){
+void setupClock(){
     clock.begin();
     clock.setDateTime(__DATE__, __TIME__);
-}*/
+}
+
+void setupPin(){
+    pinMode(STATUS_PIN, OUTPUT);
+    digitalWrite(STATUS_PIN, LOW);
+    
+    pinMode(MULTIPLEXOR_1, OUTPUT); 
+    digitalWrite(MULTIPLEXOR_1,LOW);
+    pinMode(MULTIPLEXOR_2, OUTPUT);
+    digitalWrite(MULTIPLEXOR_2,LOW);
+    
+    
+}
 
 
 void setup() {
     Serial.begin(BAUD_RATE);
-    delay(10);
     Wire.begin();
-
-    //PIN NODEMCU
-    pinMode(STATUS_PIN, OUTPUT);
-    digitalWrite(STATUS_PIN, LOW);
     
-    //setupClock();
+    setupPin();
+    setupClock();
     SPIFFS.begin();
     resetData();
 
@@ -155,7 +168,7 @@ void setup() {
     //tickerStatusLed.start();
 
 }
-/*
+
 long getEpoch(){
      if(DEBUG)
          Serial.println("Main: Getting Time");
@@ -169,9 +182,52 @@ long getEpoch(){
          Serial.println(dt.second);
      }
      return dt.unixtime;
-}*/
+}
 
+float getCurrent(){
+  float current;
 
+  //digitalWrite(MULTIPLEXOR_1,HIGH);
+  //digitalWrite(MULTIPLEXOR_2,LOW);
+
+  delay(10);
+  
+  inputVal = analogRead(ANALOG_PIN);
+
+  current = inputVal * 10;
+  
+  return current;
+}
+
+float getVoltage(){
+  float voltage;
+
+  //digitalWrite(MULTIPLEXOR_1,HIGH);
+  //digitalWrite(MULTIPLEXOR_2,HIGH);
+
+  delay(10);
+  
+  inputVal = analogRead(ANALOG_PIN);
+
+  voltage = inputVal * 10;
+  
+  return voltage;
+}
+
+float getLight(){
+  float light;
+  
+  digitalWrite(MULTIPLEXOR_1,LOW);
+  digitalWrite(MULTIPLEXOR_2,LOW);
+
+  delay(10);
+  
+  inputVal = analogRead(ANALOG_PIN);
+
+  light = inputVal;
+  
+  return light;
+}
 
 void storeMeasure(){
     File f = SPIFFS.open(DATA_FILE, "a");
@@ -195,7 +251,6 @@ void storeMeasure(){
 
 long previousMillis = 0;
 long loopInterval = 1000;
-int i=0;
 
 void loop() {
   //tickerStatusLed.update();
@@ -207,10 +262,11 @@ void loop() {
   if(currentMillis - previousMillis > loopInterval) { 
     previousMillis = currentMillis;
 
-    currentMeasure.time = 1539489908;
-    currentMeasure.current = random(300);
-    currentMeasure.voltage = random(300);
-    currentMeasure.light = random(300);
+   
+    currentMeasure.current = getCurrent();
+    currentMeasure.voltage = getVoltage();
+    currentMeasure.light = getLight();
+    currentMeasure.time = getEpoch();
 
     storeMeasure();
   }
