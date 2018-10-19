@@ -17,12 +17,13 @@ struct t_measure {
 const bool DEBUG = true;
 
 const int BAUD_RATE = 115200;
-const int STATUS_PIN = 2;
 
+/***************************** PINS **********************************/
+const int STATUS_PIN = 2;
 const int ANALOG_PIN = A0;
-const int MULTIPLEXOR_1 = 12;
-const int MULTIPLEXOR_2 = 14;     
-int inputVal  = 0;        
+const int CONTROL_1_PIN = 12;
+const int CONTROL_2_PIN = 14;
+/*********************************************************************/      
 
 /***************************** TICKERS **********************************/
 const int STATUS_LED_NO_WIFI_TIME = 500;
@@ -145,14 +146,12 @@ void setupPin(){
     pinMode(STATUS_PIN, OUTPUT);
     digitalWrite(STATUS_PIN, LOW);
     
-    pinMode(MULTIPLEXOR_1, OUTPUT); 
-    digitalWrite(MULTIPLEXOR_1,LOW);
-    pinMode(MULTIPLEXOR_2, OUTPUT);
-    digitalWrite(MULTIPLEXOR_2,LOW);
-    
+    pinMode(CONTROL_1_PIN, OUTPUT); 
+    digitalWrite(CONTROL_1_PIN,LOW);
+    pinMode(CONTROL_2_PIN, OUTPUT);
+    digitalWrite(CONTROL_2_PIN,LOW);
     
 }
-
 
 void setup() {
     Serial.begin(BAUD_RATE);
@@ -184,49 +183,50 @@ long getEpoch(){
      return dt.unixtime;
 }
 
-float getCurrent(){
-  float current;
+float medir(){
+   float medida = 0;
+   int muestras = 10;
+    for (int i=1; muestras>= i; i++){
+      medida = medida + analogRead(ANALOG_PIN);
+      }    
+      medida = (float)(medida / muestras);
+      return medida;
+}
 
-  //digitalWrite(MULTIPLEXOR_1,HIGH);
-  //digitalWrite(MULTIPLEXOR_2,LOW);
+float getCurrent(){
+  float sensorVoltage;
+  float current;
+  
+  digitalWrite(CONTROL_1_PIN,LOW);
+  digitalWrite(CONTROL_2_PIN,LOW);
 
   delay(10);
-  
-  inputVal = analogRead(ANALOG_PIN);
-
-  current = inputVal * 10;
+  sensorVoltage = medir()*(5.0 / 1023.0);
+  current = (sensorVoltage-2.5) / (0.185);
   
   return current;
 }
 
 float getVoltage(){
   float voltage;
-
-  //digitalWrite(MULTIPLEXOR_1,HIGH);
-  //digitalWrite(MULTIPLEXOR_2,HIGH);
+  
+  digitalWrite(CONTROL_1_PIN,LOW);
+  digitalWrite(CONTROL_2_PIN,HIGH);
 
   delay(10);
-  
-  inputVal = analogRead(ANALOG_PIN);
-
-  voltage = inputVal * 10;
-  
+  voltage = medir()*0.015;
   return voltage;
 }
 
 float getLight(){
-  float light;
+  float valorMedida;
   
-  digitalWrite(MULTIPLEXOR_1,LOW);
-  digitalWrite(MULTIPLEXOR_2,LOW);
+  digitalWrite(CONTROL_1_PIN,HIGH);
+  digitalWrite(CONTROL_2_PIN,LOW);
 
   delay(10);
-  
-  inputVal = analogRead(ANALOG_PIN);
-
-  light = inputVal;
-  
-  return light;
+  valorMedida = medir();
+  return valorMedida;
 }
 
 void storeMeasure(){
@@ -254,9 +254,7 @@ long loopInterval = 1000;
 
 void loop() {
   //tickerStatusLed.update();
-  delay(0);
   server.handleClient();
-  delay(0);
     
   unsigned long currentMillis = millis();
   if(currentMillis - previousMillis > loopInterval) { 
