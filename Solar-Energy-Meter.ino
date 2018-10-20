@@ -185,11 +185,13 @@ long getEpoch(){
 
 float medir(){
    float medida = 0;
-   int muestras = 10;
+   int muestras = 1000;
     for (int i=1; muestras>= i; i++){
       medida = medida + analogRead(ANALOG_PIN);
-      }    
+      yield();
+      }
       medida = (float)(medida / muestras);
+      Serial.println(medida);  
       return medida;
 }
 
@@ -201,8 +203,9 @@ float getCurrent(){
   digitalWrite(CONTROL_2_PIN,LOW);
 
   delay(10);
-  sensorVoltage = medir()*(5.0 / 1023.0);
-  current = (sensorVoltage-2.5) / (0.185);
+  sensorVoltage = medir()*(3.3/ 1023.0);
+  Serial.println(sensorVoltage);
+  current = (-1)*(sensorVoltage-2.69) / (0.185);
   
   return current;
 }
@@ -233,8 +236,7 @@ void storeMeasure(){
     File f = SPIFFS.open(DATA_FILE, "a");
     if (!f){
       Serial.print("file open failed");
-      }
-    f.print(currentMeasure.time);
+      }    f.print(currentMeasure.time);
     f.print(",");
     f.print(currentMeasure.voltage);
     f.print(",");
@@ -243,7 +245,7 @@ void storeMeasure(){
     f.print(currentMeasure.light);
     f.println("");
 
-    Serial.println(f.size());
+    //Serial.println(f.size());
 
     f.close();
 }
