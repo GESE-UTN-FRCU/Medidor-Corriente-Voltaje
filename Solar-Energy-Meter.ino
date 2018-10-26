@@ -24,8 +24,8 @@ struct t_measure {
 /****************************** PINS ***********************************/
 const int STATUS_PIN = 2;
 const int ANALOG_PIN = A0;
-const int CONTROL_1_PIN = 12;
-const int CONTROL_2_PIN = 14;
+const int CONTROL_1_PIN = 12; // B - ROJO
+const int CONTROL_2_PIN = 14; // A - VERDE
 
 /******************************* WIFI **********************************/
 const char* WIFI_SSID = "Solar Energy Meter";
@@ -44,6 +44,8 @@ const char* ROUTE_DATA = "/data";
 const char* ROUTE_STATUS = "/status";
 const char* ROUTE_FUNCTIONS = "/functions.js";
 const char* ROUTE_STYLE = "/style.css";
+const char* ROUTE_CALIB = "/calib";
+
 
 /***************************** STORAGE *********************************/
 const char* INDEX_FILE = "/index.html";
@@ -53,8 +55,22 @@ const char* STYLE_FILE = "/style.css";
 
 /***************************** GENERAL *********************************/
 const bool DEBUG = true;
-const bool CLEAR_ON_INIT = true;
+const bool CLEAR_ON_INIT = false;
 const int BAUD_RATE = 115200;
+
+const int MEASURE_QUANTITY = 500;
+const int MEASURE_INTERVAL = 5; // In Seconds
+
+/*************************** calibration *******************************/
+const float ZERO_CURRENT_OFFSET = 2.6719972972973;
+const float CURRENT_MULTIPLIER = 2.13461538461538;
+
+const float VOLTAGE_MULTIPLIER = 10.945573544609;
+
+const float ZERO_LIGHT_OFFSET= 0.62461;
+const float LIGHT_MULTIPLIER = 107.790991500415;
+
+
 
 /***********************************************************************/
 /**************************** VARIABLES ********************************/
@@ -68,13 +84,15 @@ DNSServer dnsServer;
 DS3231 clock;
 RTCDateTime dt;
 
+long iterations, lastMillis, currentMillis;
+bool calibration = false;
 
 
 /***********************************************************************/
 /************************* GENERAL METHODS *****************************/
 /***********************************************************************/
-void resetMeasure(){
-    memset(&currentMeasure, 0, sizeof currentMeasure);
+void resetMeasure() {
+  memset(&currentMeasure, 0, sizeof currentMeasure);
 }
 
 void resetData() {
@@ -88,15 +106,14 @@ long getEpoch() {
   return dt.unixtime;
 }
 
-float medir() {
-  float medida = 0;
-  int muestras = 1000;
-  for (int i = 1; muestras >= i; i++) {
-    medida = medida + analogRead(ANALOG_PIN);
+float doMeasure() {
+  float measure = 0;
+  for (int i = 1; MEASURE_QUANTITY >= i; i++) {
+    measure += analogRead(ANALOG_PIN);
     yield();
   }
-  medida = (float)(medida / muestras);
-  return medida;
+  measure = measure * (3.3 / 1023.0) / MEASURE_QUANTITY;
+  return measure;
 }
 
 float getCurrent() {
@@ -106,10 +123,12 @@ float getCurrent() {
   digitalWrite(CONTROL_2_PIN, LOW);
   delay(10);
 
-  current = medir() * (3.3 / 1023.0);
+  current = doMeasure();
+  if (!calibration)
+    current = (-1) * (current - ZERO_CURRENT_OFFSET) * CURRENT_MULTIPLIER / (0.185);
+
   if (DEBUG)
     Serial.println(current);
-  //current = (-1) * (current - 2.69) / (0.185);
 
   return current;
 }
@@ -117,35 +136,43 @@ float getCurrent() {
 float getVoltage() {
   float voltage;
 
-  digitalWrite(CONTROL_1_PIN, LOW);
-  digitalWrite(CONTROL_2_PIN, HIGH);
+  digitalWrite(CONTROL_1_PIN, HIGH);
+  digitalWrite(CONTROL_2_PIN, LOW);
   delay(10);
 
-  voltage = medir() * (3.3 / 1023.0);
+  voltage = doMeasure();
+  if (!calibration)
+    voltage *= VOLTAGE_MULTIPLIER;
+
   if (DEBUG)
     Serial.println(voltage);
   return voltage;
 }
 
 float getLight() {
-  float valorMedida;
+  float light;
 
-  digitalWrite(CONTROL_1_PIN, HIGH);
-  digitalWrite(CONTROL_2_PIN, LOW);
+  digitalWrite(CONTROL_1_PIN, LOW);
+  digitalWrite(CONTROL_2_PIN, HIGH);
 
   delay(10);
-  valorMedida = medir() * (3.3 / 1023);
+  light = doMeasure();
+  if (!calibration)
+    light  = (light - ZERO_LIGHT_OFFSET) * LIGHT_MULTIPLIER;
   if (DEBUG)
-    Serial.println(valorMedida);
-  return valorMedida;
+    Serial.println(light);
+  return light;
 }
 
 void storeMeasure() {
-  memcpy(&lastMeasure,&currentMeasure, sizeof currentMeasure);
+  memcpy(&lastMeasure, &currentMeasure, sizeof currentMeasure);
 
   File f = SPIFFS.open(DATA_FILE, "a");
-  f.printf("%d\tV: %.5f\tI: %.5f,L: %.5f\n",lastMeasure.time,lastMeasure.voltage,lastMeasure.current,lastMeasure.light);
+  f.printf("%d,%.5f,%.5f,%.5f\n", lastMeasure.time, lastMeasure.voltage, lastMeasure.current, lastMeasure.light);
   f.close();
+
+  if (DEBUG)
+    Serial.println("MEASURE STORED");
 }
 
 /***************************** ROUTES **********************************/
@@ -171,7 +198,7 @@ void handleRoot() {
 
 
 void handleReset() {
-  verifyUrl();
+  //verifyUrl();
   resetData();
   File f = SPIFFS.open(INDEX_FILE, "r");
   server.streamFile(f, "text/html");
@@ -179,34 +206,42 @@ void handleReset() {
 }
 
 void handleData() {
-  verifyUrl();
+  //verifyUrl();
   File f = SPIFFS.open(DATA_FILE, "r");
   server.streamFile(f, "text/csv");
   f.close();
 }
 
 void handleStatus() {
-  verifyUrl();
+  //verifyUrl();
   FSInfo fs_info;
   SPIFFS.info(fs_info);
 
   float porcentage = ((((float)fs_info.totalBytes - (float)fs_info.usedBytes) / (float)fs_info.totalBytes)) * 100;
+
+  server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "text/plain", String(porcentage) + "," + String(lastMeasure.time) + "," + String(lastMeasure.voltage, 5) + "," + String(lastMeasure.current, 5) + "," + String(lastMeasure.light, 5));
 }
 
 
 void handleFunctions() {
-  verifyUrl();
+  //verifyUrl();
   File f = SPIFFS.open(FUNCTIONS_FILE, "r");
   server.streamFile(f, "text/javascript");
   f.close();
 }
 
 void handleStyle() {
-  verifyUrl();
+  //verifyUrl();
   File f = SPIFFS.open(STYLE_FILE, "r");
   server.streamFile(f, "text/css");
   f.close();
+}
+
+void handleCalib() {
+  //verifyUrl();
+  calibration = !calibration;
+  server.send(204);
 }
 
 
@@ -235,6 +270,7 @@ void setupWifi() {
   server.on(ROUTE_STATUS, handleStatus);
   server.on(ROUTE_FUNCTIONS, handleFunctions);
   server.on(ROUTE_STYLE, handleStyle);
+  server.on(ROUTE_CALIB, handleCalib);
   server.onNotFound(handleDefault);
 
   server.begin();
@@ -274,40 +310,42 @@ void setup() {
   if (CLEAR_ON_INIT)
     resetData();
 
+
+  lastMillis = 0;
+  iterations = 0;
+  resetMeasure();
 }
 
 /***********************************************************************/
 /******************************* LOOPS *********************************/
 /***********************************************************************/
 
-long previousMillis = 0;
-long loopInterval = 1;
-
-
-int ITERACIONES = 100;
-int cantidad = 0;
-
 void loop() {
   server.handleClient();
   dnsServer.processNextRequest();
 
+  currentMillis = millis();
 
-  if (cantidad == ITERACIONES) {
-    cantidad = 0;
-    currentMeasure.current /= ITERACIONES;
-    currentMeasure.voltage /= ITERACIONES;
-    currentMeasure.light /= ITERACIONES;
+  if ((currentMillis - lastMillis) >= MEASURE_INTERVAL * 1000) {
+
+    currentMeasure.current /= iterations;
+    currentMeasure.voltage /= iterations;
+    currentMeasure.light /= iterations;
     currentMeasure.time = getEpoch();
+
 
     storeMeasure();
 
-    
+    resetMeasure();
+    iterations = 0;
+    lastMillis = currentMillis;
+
   }
   else {
     currentMeasure.current += getCurrent();
     currentMeasure.voltage += getVoltage();
     currentMeasure.light += getLight();
-    cantidad++;
+    iterations += 1;
   }
 
 }
