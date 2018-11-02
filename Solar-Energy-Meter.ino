@@ -58,8 +58,8 @@ const bool DEBUG = true;
 const bool CLEAR_ON_INIT = false;
 const int BAUD_RATE = 115200;
 
-const int MEASURE_QUANTITY = 500;
-const int MEASURE_INTERVAL = 5; // In Seconds
+const int MEASURE_QUANTITY = 250;
+const int MEASURE_INTERVAL = 600; // In Seconds
 
 /*************************** calibration *******************************/
 const float ZERO_CURRENT_OFFSET = 2.6719972972973;
@@ -347,5 +347,4 @@ void loop() {
     currentMeasure.light += getLight();
     iterations += 1;
   }
-
 }
